@@ -7,9 +7,9 @@ const userSchema = new mongoose.Schema({
   id: { type: String, unique: true },
   email: { type: String, unique: true },
   password: String,
-  accountVerified: Boolean,
-  accountVerificationToken: String,
-  accountVerificationTokenTimestamp: Date,
+  verified: Boolean,
+  verificationToken: String,
+  verificationTokenTimestamp: Date,
 }, { timestamps: true });
 
 
@@ -26,10 +26,10 @@ userSchema.pre('save', async function save(next) {
       user.password = hash;
     }
 
-    if (user.isModified('accountVerificationToken')) {
+    if (user.isModified('verificationToken')) {
       const salt = await bcrypt.genSalt(10);
-      const hash = await bcrypt.hash(user.accountVerificationToken, salt);
-      user.accountVerificationToken = hash;
+      const hash = await bcrypt.hash(user.verificationToken, salt);
+      user.verificationToken = hash;
     }
 
     return next();
@@ -50,8 +50,8 @@ userSchema.methods.comparePassword = function comparePassword(candidatePassword)
 /**
  * Helper method for validating user's account validation token.
  */
-userSchema.methods.compareVerificationToken = async function compareVerificationToken(candidateToken) {
-  return bcrypt.compare(candidateToken, this.accountVerificationToken);
+userSchema.methods.compareVerificationToken = async function compareToken(candidateToken) {
+  return bcrypt.compare(candidateToken, this.verificationToken);
 };
 
 const User = mongoose.model('User', userSchema);

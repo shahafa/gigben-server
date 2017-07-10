@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const uuid = require('uuid/v4');
 const moment = require('moment');
+const nodemailer = require('nodemailer');
 const User = require('../models/User');
 const { successObject, errorObject } = require('../lib/util');
 const {
@@ -17,10 +18,30 @@ const generateToken = user => jwt.sign({
   user: {
     id: user.id,
     email: user.email,
-    profile: user.profile,
+    verified: user.verified,
   },
 }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
+const sendVerificationMail = (email, token) => {
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.zoho.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: 'do-not-reply@gigben.com',
+      pass: 'Zubur123',
+    },
+  });
+
+  const mailOptions = {
+    from: '"Gigben 👻" <do-not-reply@gigben.com>',
+    to: 'dodo@yopmail.com',
+    subject: 'Hello ✔',
+    text: `Gigben verification token: ${token}`,
+  };
+
+  transporter.sendMail(mailOptions);
+};
 
 const signup = async (req, res) => {
   req.assert('email', 'email field is missing').notEmpty();
@@ -45,13 +66,14 @@ const signup = async (req, res) => {
       id: uuid(),
       email: req.body.email,
       password: req.body.password,
-      accountVerified: false,
-      accountVerificationToken: verificationToken,
-      accountVerificationTokenTimestamp: Date.now(),
+      verified: false,
+      verificationToken,
+      verificationTokenTimestamp: Date.now(),
     });
 
     await user.save();
-    console.log(verificationToken); // TODO send email
+
+    sendVerificationMail(user.email, verificationToken);
 
     return res.send(successObject('Sign up success'));
   } catch (err) {
@@ -77,12 +99,12 @@ const verificationEmail = async (req, res) => {
 
     const verificationToken = Math.floor((Math.random() * 900000) + 100000);
 
-    user.accountVerified = false;
-    user.accountVerificationToken = verificationToken;
-    user.accountVerificationTokenTimestamp = Date.now();
+    user.verified = false;
+    user.verificationToken = verificationToken;
+    user.verificationTokenTimestamp = Date.now();
     await user.save();
 
-    console.log(verificationToken); // TODO send email
+    sendVerificationMail(user.email, verificationToken);
 
     return res.send(successObject('Verification email sent successfuly'));
   } catch (err) {
@@ -107,7 +129,7 @@ const verifyAccount = async (req, res) => {
       return res.status(401).send(errorObject(ERROR_INVALID_EMAIL_TOKEN, 'Invalid email or token'));
     }
 
-    if (moment().diff(moment(user.accountVerificationTokenTimestamp), 'minutes') > 9) {
+    if (moment().diff(moment(user.verificationTokenTimestamp), 'minutes') > 9) {
       return res.status(401).send(errorObject(ERROR_EXPIRED_TOKEN, 'Token is expired'));
     }
 
@@ -116,7 +138,7 @@ const verifyAccount = async (req, res) => {
       return res.status(401).send(errorObject(ERROR_INVALID_EMAIL_TOKEN, 'Invalid email or token'));
     }
 
-    user.accountVerified = true;
+    user.verified = true;
     await user.save();
 
     return res.send(successObject('Account verified successfully', { token: generateToken(user) }));
@@ -143,7 +165,7 @@ const login = async (req, res) => {
       return res.status(401).send(errorObject(ERROR_INVALID_EMAIL_PASSWORD, 'Invalid email or password'));
     }
 
-    if (!user.accountVerified) {
+    if (!user.verified) {
       return res.status(401).send(errorObject(ERROR_ACCOUNT_VERIFICATION, 'Account is not verified, please verifiy account'));
     }
 
