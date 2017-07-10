@@ -24,12 +24,12 @@ const generateToken = user => jwt.sign({
 
 const sendVerificationMail = (email, token) => {
   const transporter = nodemailer.createTransport({
-    host: 'smtp.zoho.com',
-    port: 465,
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
     secure: true,
     auth: {
-      user: 'do-not-reply@gigben.com',
-      pass: 'Zubur123',
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
     },
   });
 
