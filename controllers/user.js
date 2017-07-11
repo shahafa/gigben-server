@@ -9,9 +9,8 @@ const {
   ERROR_SOMETHING_BAD_HAPPEND,
   ERROR_INVALID_EMAIL_PASSWORD,
   ERROR_EMAIL_ALREADY_EXISTS,
-  ERROR_INVALID_EMAIL_TOKEN,
-  ERROR_EXPIRED_TOKEN,
-  ERROR_ACCOUNT_VERIFICATION,
+  ERROR_INVALID_CODE,
+  ERROR_EXPIRED_CODE,
 } = require('../consts');
 
 const generateToken = user => jwt.sign({
@@ -22,7 +21,9 @@ const generateToken = user => jwt.sign({
   },
 }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-const sendVerificationMail = (email, token) => {
+const generateVerificationCode = () => Math.floor((Math.random() * 900000) + 100000);
+
+const sendVerificationEmail = (email, code) => {
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: process.env.SMTP_PORT,
@@ -35,9 +36,9 @@ const sendVerificationMail = (email, token) => {
 
   const mailOptions = {
     from: '"Gigben 👻" <do-not-reply@gigben.com>',
-    to: 'dodo@yopmail.com',
+    to: 'gigben@yopmail.com',
     subject: 'Hello ✔',
-    text: `Gigben verification token: ${token}`,
+    text: `Gigben verification code: ${code}`,
   };
 
   transporter.sendMail(mailOptions);
@@ -60,31 +61,31 @@ const signup = async (req, res) => {
       return res.status(409).send(errorObject(ERROR_EMAIL_ALREADY_EXISTS, 'Account with that email address already exists'));
     }
 
-    const verificationToken = Math.floor((Math.random() * 900000) + 100000);
+    const verificationCode = generateVerificationCode();
 
     const user = new User({
       id: uuid(),
       email: req.body.email,
       password: req.body.password,
       verified: false,
-      verificationToken,
-      verificationTokenTimestamp: Date.now(),
+      verificationCode,
+      verificationCodeTimestamp: Date.now(),
     });
 
     await user.save();
 
-    sendVerificationMail(user.email, verificationToken);
+    sendVerificationEmail(user.email, verificationCode);
 
-    return res.send(successObject('Sign up success'));
+    return res.send(successObject('Sign up success', { token: generateToken(user) }));
   } catch (err) {
     return res.status(500).send(errorObject(ERROR_SOMETHING_BAD_HAPPEND, 'Something bad happened :(', err));
   }
 };
 
-
-const verificationEmail = async (req, res) => {
+const verify = async (req, res) => {
   req.assert('email', 'email field is missing').notEmpty();
   req.assert('email', 'email is not valid').isEmail();
+  req.assert('code', 'code field is missing').notEmpty();
   req.sanitize('email').normalizeEmail({ remove_dots: false });
   const errors = await req.getValidationResult();
   if (!errors.isEmpty()) {
@@ -94,48 +95,16 @@ const verificationEmail = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email.toLowerCase() });
     if (!user) {
-      return res.status(500).send(errorObject(ERROR_SOMETHING_BAD_HAPPEND, 'Something bad happened :('));
+      return res.status(401).send(errorObject(ERROR_INVALID_CODE, 'Invalid code, please try again'));
     }
 
-    const verificationToken = Math.floor((Math.random() * 900000) + 100000);
-
-    user.verified = false;
-    user.verificationToken = verificationToken;
-    user.verificationTokenTimestamp = Date.now();
-    await user.save();
-
-    sendVerificationMail(user.email, verificationToken);
-
-    return res.send(successObject('Verification email sent successfuly'));
-  } catch (err) {
-    return res.status(500).send(errorObject(ERROR_SOMETHING_BAD_HAPPEND, 'Something bad happened :(', err));
-  }
-};
-
-
-const verifyAccount = async (req, res) => {
-  req.assert('email', 'email field is missing').notEmpty();
-  req.assert('email', 'email is not valid').isEmail();
-  req.assert('token', 'token field is missing').notEmpty();
-  req.sanitize('email').normalizeEmail({ remove_dots: false });
-  const errors = await req.getValidationResult();
-  if (!errors.isEmpty()) {
-    return res.status(400).send(errorObject(ERROR_VALIDATION_FAILED, 'Validation Failed', errors.array()));
-  }
-
-  try {
-    const user = await User.findOne({ email: req.body.email.toLowerCase() });
-    if (!user) {
-      return res.status(401).send(errorObject(ERROR_INVALID_EMAIL_TOKEN, 'Invalid email or token'));
+    if (moment().diff(moment(user.verificationCodeTimestamp), 'minutes') > 9) {
+      return res.status(401).send(errorObject(ERROR_EXPIRED_CODE, 'Code is expired, please refresh page and try again'));
     }
 
-    if (moment().diff(moment(user.verificationTokenTimestamp), 'minutes') > 9) {
-      return res.status(401).send(errorObject(ERROR_EXPIRED_TOKEN, 'Token is expired'));
-    }
-
-    const verificationTokenIsMatch = await user.compareVerificationToken(req.body.token);
-    if (!verificationTokenIsMatch) {
-      return res.status(401).send(errorObject(ERROR_INVALID_EMAIL_TOKEN, 'Invalid email or token'));
+    const verificationCodeIsMatch = await user.compareVerificationCode(req.body.code);
+    if (!verificationCodeIsMatch) {
+      return res.status(401).send(errorObject(ERROR_INVALID_CODE, 'Invalid code, please try again'));
     }
 
     user.verified = true;
@@ -165,13 +134,20 @@ const login = async (req, res) => {
       return res.status(401).send(errorObject(ERROR_INVALID_EMAIL_PASSWORD, 'Invalid email or password'));
     }
 
-    if (!user.verified) {
-      return res.status(401).send(errorObject(ERROR_ACCOUNT_VERIFICATION, 'Account is not verified, please verifiy account'));
-    }
-
     const passwordIsMatch = await user.comparePassword(req.body.password);
     if (!passwordIsMatch) {
       return res.status(401).send(errorObject(ERROR_INVALID_EMAIL_PASSWORD, 'Invalid email or password'));
+    }
+
+    if (!user.verified) {
+      const verificationCode = generateVerificationCode();
+
+      user.verified = false;
+      user.verificationCode = verificationCode;
+      user.verificationCodeTimestamp = Date.now();
+      await user.save();
+
+      sendVerificationEmail(user.email, verificationCode);
     }
 
     return res.send(successObject('Login success', { token: generateToken(user) }));
@@ -182,7 +158,6 @@ const login = async (req, res) => {
 
 module.exports = {
   signup,
-  verificationEmail,
-  verifyAccount,
+  verify,
   login,
 };
