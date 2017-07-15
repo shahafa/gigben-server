@@ -83,17 +83,15 @@ const signup = async (req, res) => {
 };
 
 const verify = async (req, res) => {
-  req.assert('email', 'email field is missing').notEmpty();
-  req.assert('email', 'email is not valid').isEmail();
+  req.assert('id', 'id field is missing').notEmpty();
   req.assert('code', 'code field is missing').notEmpty();
-  req.sanitize('email').normalizeEmail({ remove_dots: false });
   const errors = await req.getValidationResult();
   if (!errors.isEmpty()) {
     return res.status(400).send(errorObject(ERROR_VALIDATION_FAILED, 'Validation Failed', errors.array()));
   }
 
   try {
-    const user = await User.findOne({ email: req.body.email.toLowerCase() });
+    const user = await User.findOne({ id: req.body.id });
     if (!user) {
       return res.status(401).send(errorObject(ERROR_INVALID_CODE, 'Invalid code, please try again'));
     }
