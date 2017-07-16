@@ -1,3 +1,5 @@
+const express = require('express');
+const path = require('path');
 const compression = require('compression');
 const bodyParser = require('body-parser');
 const logger = require('morgan');
@@ -48,6 +50,8 @@ function expressConfig(app) {
 
   // Monitors express at /status
   app.use(expressStatusMonitor());
+
+  app.use(express.static(path.join(__dirname, '/../client'), { maxAge: 31557600000 }));
 
   console.log('%s Express configured successfully', chalk.green('✓'));
 }
