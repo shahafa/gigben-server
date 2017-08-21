@@ -2,11 +2,14 @@ const path = require('path');
 const jwt = require('express-jwt');
 const chalk = require('chalk');
 const userController = require('../controllers/user');
+const earlyAccessUserController = require('../controllers/earlyAccessUser');
 
 const authenticate = jwt({ secret: process.env.JWT_SECRET });
 
 function routesConfig(app) {
   app.get('/v1/test', authenticate, (req, res) => { res.send('Hello World!'); });
+
+  app.post('/v1/addEarlyAccessUser', earlyAccessUserController.addUser);
 
   app.post('/v1/signup', userController.signup);
   app.post('/v1/verify', userController.verify);

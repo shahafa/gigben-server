@@ -11,7 +11,7 @@
     "dotenv": "^4.0.0",
     "express": "^4.15.3",
     "express-jwt": "^5.3.0",
-    "express-status-monitor": "^0.1.9",
+    "express-status-monitor": "^1.0.0",
     "express-validator": "^3.2.0",
     "jsonwebtoken": "^7.4.1",
     "lusca": "^1.4.1",
@@ -22,7 +22,7 @@
     "uuid": "^3.0.1"
   },
   "devDependencies": {
-    "eslint": "^3.19.0",
+    "eslint": "^4.3.0",
     "eslint-config-airbnb": "^15.0.1",
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jsx-a11y": "^5.0.1",
