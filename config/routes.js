@@ -17,6 +17,7 @@ function routesConfig(app) {
   app.post('/v1/login', userController.login);
 
   app.post('/v1/plaidLogin', plaidController.login);
+  app.post('/v1/dashboard/status', plaidController.status);
 
   app.use('*', (req, res) => res.sendFile(path.join(__dirname, '/../client/index.html')));
 

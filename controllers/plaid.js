@@ -38,6 +38,33 @@ const login = async (req, res) => {
   }
 };
 
+function filterCredit(account) {
+  return account.type === "credit";
+}
+
+const status = async (req, res) => {
+  req.assert('plaidPublicToken', 'plaidPublicToken field is missing').notEmpty();
+  const errors = await req.getValidationResult();
+  if (!errors.isEmpty()) {
+    return res.status(400).send(errorObject(ERROR_VALIDATION_FAILED, 'Validation Failed', errors.array()));
+  }
+
+  const publicToken = req.body.plaidPublicToken;
+
+  try {
+    const { access_token: accessToken } = await plaidClient.exchangePublicToken(publicToken);
+    const balance = await plaidClient.getBalance(accessToken);
+    const balanceAccounts = balance.accounts;
+    const sum = balanceAccounts.reduce((sum, account) => sum + account.balances.current, 0);
+    const creditCards = balanceAccounts.filter(filterCredit);
+    const sumCredits = creditCards.reduce((sum, account) => sum + account.balances.current, 0);
+    return res.send({ bankBalance: sum, creditCards: sumCredits });
+  } catch (err) {
+    return res.status(500).send(errorObject(ERROR_SOMETHING_BAD_HAPPEND, 'Something bad happened :(', err));
+  }
+};
+
 module.exports = {
   login,
+  status,
 };
