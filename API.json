@@ -1,0 +1,68 @@
+Request:
+POST /v1/plaidLogin
+{
+  "plaidPublicToken": x
+}
+
+
+Request:
+POST /v1/dashboard/status
+{
+  "plaidPublicToken": x
+}
+Response:
+{
+  bankBalance: 3000,
+  creditCards: 2042,
+  loans: 3184, // don't implement
+  investments: 2212, // don't implement
+  retiementBalance: 10232, // don't implement
+}
+
+Request:
+POST /v1/dashboard/income
+{
+  "plaidPublicToken": x
+}
+
+Response:
+{
+  labels: ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'],
+  platforms: [{
+    name: 'UpWorks',
+    data: [1012, 895, 1213, 945, 1123, 0, 1345, 765, 1078, 1172, 564, 1119],
+  }, {
+    name: 'Toptal',
+    data: [345, 452, 0, 213, 578, 489, 1098, 1012, 345, 234, 672, 598],
+  }]
+}
+
+
+Request:
+POST /v1/dashboard/netpay
+{
+  "plaidPublicToken": x
+}
+Response:
+{
+  labels: ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'],
+  data: [1012, 895, 1213, 945, 1123, 0, 1345, 765, 1078, 1172, 564, 1119],
+}
+
+
+Request:
+POST /v1/dashboard/deductions
+{
+  "plaidPublicToken": x
+}
+Response:
+{
+  labels: ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'],
+  platforms: [{
+    name: 'strideHealth',
+    data: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+  }, {
+    name: 'honest dollar',
+    data: [345, 452, 0, 213, 578, 489, 1098, 1012, 345, 234, 672, 598],
+  }]
+}
