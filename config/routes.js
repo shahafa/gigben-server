@@ -3,6 +3,7 @@ const jwt = require('express-jwt');
 const chalk = require('chalk');
 const userController = require('../controllers/user');
 const earlyAccessUserController = require('../controllers/earlyAccessUser');
+const plaidController = require('../controllers/plaid');
 
 const authenticate = jwt({ secret: process.env.JWT_SECRET });
 
@@ -14,6 +15,8 @@ function routesConfig(app) {
   app.post('/v1/signup', userController.signup);
   app.post('/v1/verify', userController.verify);
   app.post('/v1/login', userController.login);
+
+  app.post('/v1/plaidLogin', plaidController.login);
 
   app.use('*', (req, res) => res.sendFile(path.join(__dirname, '/../client/index.html')));
 
