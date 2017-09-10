@@ -19,6 +19,8 @@ Response:
   retiementBalance: 10232, // don't implement
 }
 
+--done
+
 Request:
 POST /v1/dashboard/income
 {
