@@ -19,6 +19,9 @@ function routesConfig(app) {
   app.post('/v1/plaidLogin', plaidController.login);
   app.post('/v1/dashboard/status', plaidController.status);
   app.post('/v1/dashboard/income', plaidController.income);
+  app.post('/v1/dashboard/netpay', plaidController.netpay);
+  app.post('/v1/dashboard/deductions', plaidController.deductions);
+  app.post('/v1/dashboard/expenses', plaidController.expenses);
 
   app.use('*', (req, res) => res.sendFile(path.join(__dirname, '/../client/index.html')));
 
