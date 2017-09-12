@@ -78,9 +78,7 @@ const signup = async (req, res) => {
     if (existingUser) {
       return res
         .status(409)
-        .send(
-          errorObject(ERROR_EMAIL_ALREADY_EXISTS, 'Account with that email address already exists'),
-        );
+        .send(errorObject(ERROR_EMAIL_ALREADY_EXISTS, 'Account with that email address already exists'));
     }
 
     const verificationCode = generateVerificationCode();
@@ -135,9 +133,7 @@ const verify = async (req, res) => {
     if (moment().diff(moment(user.verificationCodeTimestamp), 'minutes') > 9) {
       return res
         .status(401)
-        .send(
-          errorObject(ERROR_EXPIRED_CODE, 'Code is expired, please refresh page and try again'),
-        );
+        .send(errorObject(ERROR_EXPIRED_CODE, 'Code is expired, please refresh page and try again'));
     }
 
     const verificationCodeIsMatch = await user.compareVerificationCode(data.code);
