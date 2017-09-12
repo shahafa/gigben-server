@@ -1,3 +1,5 @@
+const { check, validationResult } = require('express-validator/check');
+const { matchedData } = require('express-validator/filter');
 const nodemailer = require('nodemailer');
 const uuid = require('uuid/v4');
 const EarlyAccess = require('../models/EarlyAccess');
@@ -29,36 +31,50 @@ const sendNewEarlyAccessUserNotificationEmail = (earlyAccessUserEmail) => {
   transporter.sendMail(mailOptions);
 };
 
+const validateAddUser = () => [
+  check('email')
+    .exists()
+    .withMessage('email field is missing'),
+  check('email')
+    .isEmail()
+    .withMessage('email is not valid'),
+];
+
 const addUser = async (req, res) => {
-  req.assert('email', 'email field is missing').notEmpty();
-  req.assert('email', 'email is not valid').isEmail();
-  req.sanitize('email').normalizeEmail({ remove_dots: false });
-  const errors = await req.getValidationResult();
+  const data = matchedData(req);
+  const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).send(errorObject(ERROR_VALIDATION_FAILED, 'Validation Failed', errors.array()));
+    return res
+      .status(400)
+      .send(errorObject(ERROR_VALIDATION_FAILED, 'Validation Failed', errors.mapped()));
   }
 
   try {
-    const existingEmail = await EarlyAccess.findOne({ email: req.body.email });
+    const existingEmail = await EarlyAccess.findOne({ email: data.email });
     if (existingEmail) {
-      return res.status(409).send(errorObject(ERROR_EMAIL_ALREADY_EXISTS, 'Email address already exists'));
+      return res
+        .status(409)
+        .send(errorObject(ERROR_EMAIL_ALREADY_EXISTS, 'Email address already exists'));
     }
 
     const earlyAccessUser = new EarlyAccess({
       id: uuid(),
-      email: req.body.email,
+      email: data.email,
     });
 
     await earlyAccessUser.save();
 
-    sendNewEarlyAccessUserNotificationEmail(req.body.email);
+    sendNewEarlyAccessUserNotificationEmail(data.email);
 
     return res.send(successObject('Early access sign up success'));
   } catch (err) {
-    return res.status(500).send(errorObject(ERROR_SOMETHING_BAD_HAPPEND, 'Something bad happened :(', err));
+    return res
+      .status(500)
+      .send(errorObject(ERROR_SOMETHING_BAD_HAPPEND, 'Something bad happened :(', err));
   }
 };
 
 module.exports = {
+  validateAddUser,
   addUser,
 };
