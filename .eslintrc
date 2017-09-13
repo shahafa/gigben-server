@@ -6,6 +6,7 @@
   },
   "rules": {
     "no-console": "off",
-    "linebreak-style": "off"
+    "linebreak-style": "off",
+    "function-paren-newline": "off"
   }
 }

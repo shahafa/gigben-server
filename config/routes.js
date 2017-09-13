@@ -20,6 +20,7 @@ function routesConfig(app) {
   app.post('/v1/dashboard/netpay', plaidController.validatePlaidToken, plaidController.netpay);
   app.post('/v1/dashboard/deductions', plaidController.validatePlaidToken, plaidController.deductions);
   app.post('/v1/dashboard/expenses', plaidController.validatePlaidToken, plaidController.expenses);
+
   app.post('/v1/addEarlyAccessUser', earlyAccessUserController.validateAddUser, earlyAccessUserController.addUser);
 
   app.use('*', (req, res) => res.sendFile(path.join(__dirname, '/../client/index.html')));
