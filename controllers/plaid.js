@@ -27,7 +27,7 @@ const plaidClient = new plaid.Client(
   plaid.environments[process.env.PLAID_ENV],
 );
 
-const validatePlaidToken = () => [
+const validatePlaidToken = [
   check('plaidPublicToken')
     .exists()
     .withMessage('email field is missing'),

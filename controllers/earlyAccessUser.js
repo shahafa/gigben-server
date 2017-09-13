@@ -31,7 +31,7 @@ const sendNewEarlyAccessUserNotificationEmail = (earlyAccessUserEmail) => {
   transporter.sendMail(mailOptions);
 };
 
-const validateAddUser = () => [
+const validateAddUser = [
   check('email')
     .exists()
     .withMessage('email field is missing'),

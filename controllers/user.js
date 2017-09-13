@@ -51,7 +51,7 @@ const sendVerificationEmail = (email, code) => {
   transporter.sendMail(mailOptions);
 };
 
-const validateEmailPassword = () => [
+const validateEmailPassword = [
   check('email')
     .exists()
     .withMessage('email field is missing'),
@@ -104,7 +104,7 @@ const signup = async (req, res) => {
   }
 };
 
-const validateVerify = () => [
+const validateVerify = [
   check('id')
     .exists()
     .withMessage('id field is missing'),
