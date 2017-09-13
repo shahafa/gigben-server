@@ -3,15 +3,17 @@ const mongoose = require('mongoose');
 
 bcrypt.Promise = global.Promise;
 
-const userSchema = new mongoose.Schema({
-  id: { type: String, unique: true },
-  email: { type: String, unique: true },
-  password: String,
-  verified: Boolean,
-  verificationCode: String,
-  verificationCodeTimestamp: Date,
-}, { timestamps: true });
-
+const userSchema = new mongoose.Schema(
+  {
+    id: { type: String, unique: true },
+    email: { type: String, unique: true },
+    password: String,
+    verified: Boolean,
+    verificationCode: String,
+    verificationCodeTimestamp: Date,
+  },
+  { timestamps: true },
+);
 
 /**
  * Password hash middleware.
@@ -38,14 +40,12 @@ userSchema.pre('save', async function save(next) {
   }
 });
 
-
 /**
  * Helper method for validating user's password.
  */
 userSchema.methods.comparePassword = function comparePassword(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
-
 
 /**
  * Helper method for validating user's account validation code.

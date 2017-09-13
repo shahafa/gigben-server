@@ -1,14 +1,11 @@
 {
-  "extends": "airbnb",
+  "extends": "airbnb-base",
   "env": {
     "node": true,
     "es6": true
   },
   "rules": {
     "no-console": "off",
-    "consistent-return": "off",
-    "no-shadow": "off",
-    "no-param-reassign": "off",
     "linebreak-style": "off"
   }
 }
