@@ -1,5 +1,6 @@
 const { check, validationResult } = require('express-validator/check');
 const { matchedData } = require('express-validator/filter');
+const moment = require('moment');
 const plaid = require('plaid');
 const Bank = require('../models/Bank');
 const { successObject, errorObject } = require('../lib/util');
@@ -123,10 +124,9 @@ function getTransactionsByFieldCategory(transactions, categoryName) {
   return transactions.filter(transaction => { if (transaction.category != null) { return transaction.category.includes(categoryName) } });
 }
 
-function getSumTransactionByMonth(transactions, month) {
-  const filteredByMonth = transactions.filter(transaction => transaction.date.split('-')[1] - 1 === monthNames.indexOf(month));
-  return filteredByMonth.reduce((sum, transaction) => sum + transaction.amount, 0);
-}
+const getSumTransactionByMonth = (transactions, month) => transactions
+  .filter(transaction => transaction.date.split('-')[1] - 1 === monthNames.indexOf(month))
+  .reduce((sum, transaction) => sum + transaction.amount, 0);
 
 function getArraySumTransactions(transactions, arrayMonths) {
   return arrayMonths.map(month => getSumTransactionByMonth(transactions, month));
