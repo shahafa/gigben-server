@@ -112,7 +112,7 @@ const getTransactionsByFieldCategory = (transactions, categoryName) =>
 
 const getSumTransactionByMonth = (transactions, month) =>
   transactions
-    .filter(transaction => moment(transaction.date, 'MM-DD-YYYY').month() === moment.months().indexOf(month))
+    .filter(transaction => moment(transaction.date, 'MM-DD-YYYY').month() === moment().months().indexOf(month))
     .reduce((sum, transaction) => sum + transaction.amount, 0);
 
 const getArraySumTransactions = (transactions, arrayMonths) =>
