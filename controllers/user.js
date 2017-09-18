@@ -43,7 +43,7 @@ const sendVerificationEmail = (email, code) => {
 
   const mailOptions = {
     from: '"Gigben 👻" <do-not-reply@gigben.com>',
-    to: 'gigben@yopmail.com',
+    to: email,
     subject: '😋 Welcome to Gigben',
     text: `Gigben verification code: ${code}`,
   };
