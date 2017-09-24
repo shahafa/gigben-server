@@ -41,8 +41,10 @@ const login = async (req, res) => {
     const { access_token: accessToken } = await plaidClient.exchangePublicToken(publicToken);
     const accounts = await plaidClient.getAccounts(accessToken);
     const transactions = await plaidClient.getTransactions(accessToken, getDate(24), getDate(0));
+    const userIdentity = await plaidClient.getIdentity(publicToken);
 
     const BankAccount = new Bank({
+      identity: userIdentity,
       accounts: accounts.accounts,
       transactions: transactions.transactions,
     });
@@ -137,6 +139,11 @@ const getCategoriesMap = (plaformsNames, arrayMonths, transactions) =>
     .map(name => getTransactionsByFieldCategory(transactions, name))
     .map(platformTrans => getArraySumTransactions(platformTrans, arrayMonths));
 
+const getCategoriesSumMap = (plaformsNames, transactions) =>
+  plaformsNames
+    .map(name => getTransactionsByFieldCategory(transactions, name))
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
+
 const income = async (req, res) => {
   const data = matchedData(req);
   const errors = validationResult(req);
@@ -159,8 +166,8 @@ const income = async (req, res) => {
     return res.send({
       labels: arrMonths,
       platforms: [
-        { name: platforms[0], data: platformsSumArr[0] },
-        { name: platforms[1], data: platformsSumArr[1] },
+        { name: platforms[0], color: '#6fda44', data: platformsSumArr[0] },
+        { name: platforms[1], color: '#3863a0', data: platformsSumArr[1] },
       ],
     });
   } catch (err) {
@@ -223,8 +230,8 @@ const deductions = async (req, res) => {
     return res.send({
       labels: arrMonths,
       platforms: [
-        { name: platforms[0], data: platformsSumArr[0] },
-        { name: platforms[1], data: platformsSumArr[1] },
+        { name: platforms[0], color: '#FF7B99', data: platformsSumArr[0] },
+        { name: platforms[1], color: '#4EAFEE', data: platformsSumArr[1] },
       ],
     });
   } catch (err) {
@@ -235,7 +242,7 @@ const deductions = async (req, res) => {
 };
 
 const addCategoriesToSum = (categories, sumAmount) =>
-  categories.map(category => `name: ${category}, data: ${sumAmount[categories.indexOf(category)]}`);
+  categories.map(category => `name: ${category}, value: ${sumAmount[categories.indexOf(category)]}`);
 
 const expenses = async (req, res) => {
   const data = matchedData(req);
@@ -255,9 +262,9 @@ const expenses = async (req, res) => {
     const lastYear = moment().subtract(1, 'years');
     const arrMonths = getMonthLabels(lastYear, now);
     const categories = Array.from(getTransactionsCategories(transactions.transactions));
-    const categoriesSumArr = getCategoriesMap(categories, arrMonths, transactions.transactions);
-    const categoriesSum = addCategoriesToSum(categories, categoriesSumArr);
-    return res.send({ labels: arrMonths, categories: categoriesSum });
+    const categoriesSumArr = getCategoriesSumMap(categories, arrMonths, transactions.transactions);
+    const categoriesSumJson = addCategoriesToSum(categories, categoriesSumArr);
+    return res.send({ categoriesSumJson });
   } catch (err) {
     return res
       .status(500)
