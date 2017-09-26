@@ -112,28 +112,29 @@ const status = async (req, res) => {
 
 const getTransactionsCategories = transactions =>
   uniq(
-    transactions.map(transcation => (transcation.category ? transcation.category[0] : 'undefined')),
+    transactions.map(transaction => (transaction.category && transaction.amount > 0 ? transaction.category[0] : 'undefined')),
   ).filter(e => e !== 'undefined');
 
 const getTransactionsByFieldName = (transactions, categoryName) =>
   transactions.filter(transaction => transaction.name.includes(categoryName));
 
-const getTransactionsByMonth = (transactions, month) =>
+const getTransactionsByMonth = (transactions, month, isDeduction) =>
   transactions.filter(
-    transaction => moment(transaction.date, 'YYYY-MM-DD').month() === (moment().month(month).format('M') - 1));
+    transaction => (isDeduction ? transaction.amount > 0 : transaction.amount < 0)
+    && moment(transaction.date, 'YYYY-MM-DD').month() === (moment().month(month).format('M') - 1));
 
-const getSumTransactionByMonth = (transactions, month) => {
-  const monthlyTransactions = getTransactionsByMonth(transactions, month);
+const getSumTransactionByMonth = (transactions, month, isDeduction) => {
+  const monthlyTransactions = getTransactionsByMonth(transactions, month, isDeduction);
   return Math.round(monthlyTransactions.reduce((sum, transaction) => sum + transaction.amount, 0));
 };
 
 const getSumTransactionByCategory = (transactions, category) => {
-  const categoryTransactions = transactions.filter(transaction => (transaction.category ? transaction.category.includes(category) : false));
+  const categoryTransactions = transactions.filter(transaction => (transaction.category && transaction.amount > 0 ? transaction.category.includes(category) : false));
   return Math.round(categoryTransactions.reduce((sum, transaction) => sum + transaction.amount, 0));
 };
 
-const getArraySumTransactions = (transactions, arrayMonths) =>
-  arrayMonths.map(month => getSumTransactionByMonth(transactions, month));
+const getArraySumTransactions = (transactions, arrayMonths, isDeduction) =>
+  arrayMonths.map(month => getSumTransactionByMonth(transactions, month, isDeduction));
 
 const getMonthLabels = (startDate, endDate) => {
   const arrMonths = [];
@@ -144,10 +145,10 @@ const getMonthLabels = (startDate, endDate) => {
   return arrMonths;
 };
 
-const getPlatformsMap = (plaformsNames, arrayMonths, transactions) =>
+const getPlatformsMap = (plaformsNames, arrayMonths, transactions, isDeduction) =>
   plaformsNames
     .map(name => getTransactionsByFieldName(transactions, name))
-    .map(platformTrans => getArraySumTransactions(platformTrans, arrayMonths));
+    .map(platformTrans => getArraySumTransactions(platformTrans, arrayMonths, isDeduction));
 
 const getCategoriesSumMap = (plaformsNames, transactions) =>
   plaformsNames.map(name => getSumTransactionByCategory(transactions, name));
@@ -173,8 +174,9 @@ const income = async (req, res) => {
     const now = moment();
     const lastYear = moment().subtract(1, 'years');
     const arrMonths = getMonthLabels(lastYear, now);
+    const isDeduction = false;
     const platforms = ['Uber', 'fiverr'];
-    const platformsSumArr = getPlatformsMap(platforms, arrMonths, BankAccount.transactions);
+    const platformsSumArr = getPlatformsMap(platforms, arrMonths, BankAccount.transactions, isDeduction);
     return res.send({
       labels: arrMonths,
       platforms: [
@@ -210,8 +212,9 @@ const netpay = async (req, res) => {
     const now = moment();
     const lastYear = moment().subtract(1, 'years');
     const arrMonths = getMonthLabels(lastYear, now);
-    const paymentsByMonth = getArraySumTransactions(BankAccount.transactions, arrMonths);
-    const incomeByMonth = [400, 500, 600, 200, 0, 255, 500, 1000, 8000, 6100, 123, 245];
+    const isDeduction = true;
+    const paymentsByMonth = getArraySumTransactions(BankAccount.transactions, arrMonths, isDeduction);
+    const incomeByMonth = getArraySumTransactions(BankAccount.transactions, arrMonths, !isDeduction);
     const totalNetPay = incomeByMonth.map((monthlyIncome, index) =>
       parseInt(monthlyIncome - paymentsByMonth[index], 10),
     );
@@ -244,7 +247,8 @@ const deductions = async (req, res) => {
     const lastYear = moment().subtract(1, 'years');
     const arrMonths = getMonthLabels(lastYear, now);
     const platforms = ['strideHealth', 'honest dollar'];
-    const platformsSumArr = getPlatformsMap(platforms, arrMonths, BankAccount.transactions);
+    const isDeduction = true;
+    const platformsSumArr = getPlatformsMap(platforms, arrMonths, BankAccount.transactions, isDeduction);
     return res.send({
       labels: arrMonths,
       platforms: [
