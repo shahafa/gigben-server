@@ -19,12 +19,7 @@ const validatePlaidToken = [
     .withMessage('email field is missing'),
 ];
 
-// if you need this function please use lodash bultin strPad instead
-const strPad = n => String(`00${n}`).slice(-2);
-
-const getDate = (numberOfPastMonths) => {
-  return moment().subtract(numberOfPastMonths, 'months').format('YYYY-MM-DD');
-};
+const getDate = numberOfPastMonths => moment().subtract(numberOfPastMonths, 'months').format('YYYY-MM-DD');
 
 const login = async (req, res) => {
   const data = matchedData(req);
@@ -41,7 +36,7 @@ const login = async (req, res) => {
     const { access_token: accessToken } = await plaidClient.exchangePublicToken(publicToken);
     const accounts = await plaidClient.getAccounts(accessToken);
     const transactions = await plaidClient.getTransactions(accessToken, getDate(24), getDate(0));
-    const userIdentity = await plaidClient.getIdentity(publicToken);
+    const userIdentity = await plaidClient.getIdentity(accessToken);
 
     const BankAccount = new Bank({
       identity: userIdentity,
@@ -99,8 +94,12 @@ const status = async (req, res) => {
 
 // not sure what you did here looks like code is not right let's talk about it
 function getTransactionsCategories(transactions) {
+  console.log(transactions);
+
   const categoriesSet = new Set();
   transactions.filter(transaction => { if (transaction.category != null) { transaction.category.filter(category => categoriesSet.add(category)); } });
+
+  console.log(categoriesSet);
   return categoriesSet;
 }
 
@@ -134,10 +133,10 @@ const getPlatformsMap = (plaformsNames, arrayMonths, transactions) =>
     .map(name => getTransactionsByFieldName(transactions, name))
     .map(platformTrans => getArraySumTransactions(platformTrans, arrayMonths));
 
-const getCategoriesMap = (plaformsNames, arrayMonths, transactions) =>
-  plaformsNames
-    .map(name => getTransactionsByFieldCategory(transactions, name))
-    .map(platformTrans => getArraySumTransactions(platformTrans, arrayMonths));
+// const getCategoriesMap = (plaformsNames, arrayMonths, transactions) =>
+//   plaformsNames
+//     .map(name => getTransactionsByFieldCategory(transactions, name))
+//     .map(platformTrans => getArraySumTransactions(platformTrans, arrayMonths));
 
 const getCategoriesSumMap = (plaformsNames, transactions) =>
   plaformsNames
@@ -191,14 +190,14 @@ const netpay = async (req, res) => {
   try {
     const { access_token: accessToken } = await plaidClient.exchangePublicToken(publicToken);
     const transactions = await plaidClient.getTransactions(accessToken, getDate(12), getDate(0));
-    const incomeUser = await plaidClient.getIncome(accessToken);
+
     const now = moment();
     const lastYear = moment().subtract(1, 'years');
     const arrMonths = getMonthLabels(lastYear, now);
     const paymentsByMonth = getArraySumTransactions(transactions.transactions, arrMonths);
     const incomeByMonth = [400, 500, 600, 200, 0, 255, 500, 1000, 8000, 6100, 123, 245];
-    const totalNetPay = incomeByMonth.map((income, index) =>
-      parseInt(income - paymentsByMonth[index], 10),
+    const totalNetPay = incomeByMonth.map((monthlyIncome, index) =>
+      parseInt(monthlyIncome - paymentsByMonth[index], 10),
     );
     return res.send({ labels: arrMonths, data: totalNetPay });
   } catch (err) {
