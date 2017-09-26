@@ -2,6 +2,7 @@ const { check, validationResult } = require('express-validator/check');
 const { matchedData } = require('express-validator/filter');
 const moment = require('moment');
 const plaid = require('plaid');
+const {flatten, uniq} = require('lodash/array');
 const Bank = require('../models/Bank');
 const { successObject, errorObject } = require('../lib/util');
 const { ERROR_SOMETHING_BAD_HAPPEND, ERROR_VALIDATION_FAILED } = require('../consts');
@@ -30,6 +31,7 @@ const login = async (req, res) => {
       .send(errorObject(ERROR_VALIDATION_FAILED, 'Validation Failed', errors.mapped()));
   }
 
+  const userId = req.user.user.id;
   const publicToken = data.plaidPublicToken;
 
   try {
@@ -92,16 +94,10 @@ const status = async (req, res) => {
   }
 };
 
-// not sure what you did here looks like code is not right let's talk about it
-function getTransactionsCategories(transactions) {
-  console.log(transactions);
-
-  const categoriesSet = new Set();
-  transactions.filter(transaction => { if (transaction.category != null) { transaction.category.filter(category => categoriesSet.add(category)); } });
-
-  console.log(categoriesSet);
-  return categoriesSet;
-}
+const getTransactionsCategories = transactions =>
+  uniq(
+    transactions.map(transcation => (transcation.category ? transcation.category[0] : 'undefined')),
+  ).filter(e => e !== 'undefined');
 
 const getTransactionsByFieldName = (transactions, categoryName) =>
   transactions.filter(transaction => transaction.name.includes(categoryName));
@@ -122,7 +118,7 @@ const getArraySumTransactions = (transactions, arrayMonths) =>
 const getMonthLabels = (startDate, endDate) => {
   const arrMonths = [];
   while (startDate < endDate) {
-    arrMonths.push(moment().months(startDate.month()).format('MMMM'));
+    arrMonths.push(moment().month(startDate.month()).format('MMMM'));
     startDate.month(startDate.month() + 1);
   }
   return arrMonths;
@@ -260,7 +256,7 @@ const expenses = async (req, res) => {
     const now = moment();
     const lastYear = moment().subtract(1, 'years');
     const arrMonths = getMonthLabels(lastYear, now);
-    const categories = Array.from(getTransactionsCategories(transactions.transactions));
+    const categories = getTransactionsCategories(transactions.transactions);
     const categoriesSumArr = getCategoriesSumMap(categories, arrMonths, transactions.transactions);
     const categoriesSumJson = addCategoriesToSum(categories, categoriesSumArr);
     return res.send({ categoriesSumJson });
