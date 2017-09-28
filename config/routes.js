@@ -13,6 +13,7 @@ function routesConfig(app) {
   app.post('/v1/login', userController.validateEmailPassword, userController.login);
 
   app.post('/v1/plaidLogin', authenticate, plaidController.validatePlaidToken, plaidController.login);
+  app.post('/v1/dashboard', authenticate, plaidController.validatePlaidToken, plaidController.dashboard);
   app.post('/v1/dashboard/status', authenticate, plaidController.validatePlaidToken, plaidController.status);
   app.post('/v1/dashboard/income', authenticate, plaidController.validatePlaidToken, plaidController.income);
   app.post('/v1/dashboard/netpay', authenticate, plaidController.validatePlaidToken, plaidController.netpay);

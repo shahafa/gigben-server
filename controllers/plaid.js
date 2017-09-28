@@ -73,6 +73,19 @@ const getSumAccountByFilter = (accounts, filterName) =>
     .filter(account => account.type === filterName || account.subtype === filterName)
     .reduce((sum, account) => sum + account.balances.current, 0);
 
+const getStatus = (balanceAccounts) => {
+  const sumBalance = balanceAccounts.reduce((sum, account) => sum + account.balances.current, 0);
+  const sumCredits = getSumAccountByFilter(balanceAccounts, 'credit');
+  const sumSavings = getSumAccountByFilter(balanceAccounts, 'savings');
+  return {
+    bankBalance: sumBalance,
+    creditCards: sumCredits,
+    loans: 3184,
+    investments: sumSavings,
+    retiementBalance: 10232,
+  };
+};
+
 const status = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -91,18 +104,7 @@ const status = async (req, res) => {
         .send(errorObject(ERROR_NO_PERMISSION));
     }
 
-    const balanceAccounts = BankAccount.balance;
-    const sumBalance = balanceAccounts.reduce((sum, account) => sum + account.balances.current, 0);
-    const sumCredits = getSumAccountByFilter(balanceAccounts, 'credit');
-    const sumSavings = getSumAccountByFilter(balanceAccounts, 'savings');
-
-    return res.send({
-      bankBalance: sumBalance,
-      creditCards: sumCredits,
-      loans: 3184,
-      investments: sumSavings,
-      retiementBalance: 10232,
-    });
+    return res.send(getStatus(BankAccount.balance));
   } catch (err) {
     return res
       .status(500)
@@ -153,6 +155,22 @@ const getPlatformsMap = (plaformsNames, arrayMonths, transactions, isDeduction) 
 const getCategoriesSumMap = (plaformsNames, transactions) =>
   plaformsNames.map(name => getSumTransactionByCategory(transactions, name));
 
+const getIncome = (transactions) => {
+  const now = moment();
+  const lastYear = moment().subtract(1, 'years');
+  const arrMonths = getMonthLabels(lastYear, now);
+  const isDeduction = false;
+  const platforms = ['Uber', 'fiverr'];
+  const platformsSumArr = getPlatformsMap(platforms, arrMonths, transactions, isDeduction);
+  return {
+    labels: arrMonths,
+    platforms: [
+      { name: platforms[0], color: '#6fda44', data: platformsSumArr[0] },
+      { name: platforms[1], color: '#3863a0', data: platformsSumArr[1] },
+    ],
+  };
+};
+
 const income = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -171,24 +189,25 @@ const income = async (req, res) => {
         .send(errorObject(ERROR_NO_PERMISSION));
     }
 
-    const now = moment();
-    const lastYear = moment().subtract(1, 'years');
-    const arrMonths = getMonthLabels(lastYear, now);
-    const isDeduction = false;
-    const platforms = ['Uber', 'fiverr'];
-    const platformsSumArr = getPlatformsMap(platforms, arrMonths, BankAccount.transactions, isDeduction);
-    return res.send({
-      labels: arrMonths,
-      platforms: [
-        { name: platforms[0], color: '#6fda44', data: platformsSumArr[0] },
-        { name: platforms[1], color: '#3863a0', data: platformsSumArr[1] },
-      ],
-    });
+    return res.send(getIncome(BankAccount.transactions));
   } catch (err) {
     return res
       .status(500)
       .send(errorObject(ERROR_SOMETHING_BAD_HAPPEND, 'Something bad happened in income :(', err));
   }
+};
+
+const getNetpay = (transactions) => {
+  const now = moment();
+  const lastYear = moment().subtract(1, 'years');
+  const arrMonths = getMonthLabels(lastYear, now);
+  const isDeduction = true;
+  const paymentsByMonth = getArraySumTransactions(transactions, arrMonths, isDeduction);
+  const incomeByMonth = getArraySumTransactions(transactions, arrMonths, !isDeduction);
+  const totalNetPay = incomeByMonth.map((monthlyIncome, index) =>
+    parseInt(monthlyIncome - paymentsByMonth[index], 10),
+  );
+  return { labels: arrMonths, data: totalNetPay };
 };
 
 const netpay = async (req, res) => {
@@ -209,21 +228,28 @@ const netpay = async (req, res) => {
         .send(errorObject(ERROR_NO_PERMISSION));
     }
 
-    const now = moment();
-    const lastYear = moment().subtract(1, 'years');
-    const arrMonths = getMonthLabels(lastYear, now);
-    const isDeduction = true;
-    const paymentsByMonth = getArraySumTransactions(BankAccount.transactions, arrMonths, isDeduction);
-    const incomeByMonth = getArraySumTransactions(BankAccount.transactions, arrMonths, !isDeduction);
-    const totalNetPay = incomeByMonth.map((monthlyIncome, index) =>
-      parseInt(monthlyIncome - paymentsByMonth[index], 10),
-    );
-    return res.send({ labels: arrMonths, data: totalNetPay });
+    return res.send(getNetpay(BankAccount.transactions));
   } catch (err) {
     return res
       .status(500)
       .send(errorObject(ERROR_SOMETHING_BAD_HAPPEND, 'Something bad happened in netpay :(', err));
   }
+};
+
+const getDeductions = (transactions) => {
+  const now = moment();
+  const lastYear = moment().subtract(1, 'years');
+  const arrMonths = getMonthLabels(lastYear, now);
+  const platforms = ['strideHealth', 'honest dollar'];
+  const isDeduction = true;
+  const platformsSumArr = getPlatformsMap(platforms, arrMonths, transactions, isDeduction);
+  return {
+    labels: arrMonths,
+    platforms: [
+      { name: platforms[0], color: '#FF7B99', data: platformsSumArr[0] },
+      { name: platforms[1], color: '#4EAFEE', data: platformsSumArr[1] },
+    ],
+  };
 };
 
 const deductions = async (req, res) => {
@@ -243,19 +269,8 @@ const deductions = async (req, res) => {
         .status(400)
         .send(errorObject(ERROR_NO_PERMISSION));
     }
-    const now = moment();
-    const lastYear = moment().subtract(1, 'years');
-    const arrMonths = getMonthLabels(lastYear, now);
-    const platforms = ['strideHealth', 'honest dollar'];
-    const isDeduction = true;
-    const platformsSumArr = getPlatformsMap(platforms, arrMonths, BankAccount.transactions, isDeduction);
-    return res.send({
-      labels: arrMonths,
-      platforms: [
-        { name: platforms[0], color: '#FF7B99', data: platformsSumArr[0] },
-        { name: platforms[1], color: '#4EAFEE', data: platformsSumArr[1] },
-      ],
-    });
+
+    return res.send(getDeductions(BankAccount.transactions));
   } catch (err) {
     return res
       .status(500)
@@ -265,6 +280,13 @@ const deductions = async (req, res) => {
 
 const addCategoriesToSum = (categories, sumAmount) =>
   categories.map(category => `name: ${category}, value: ${sumAmount[categories.indexOf(category)]}`);
+
+const getExpenses = (transactions) => {
+  const categories = getTransactionsCategories(transactions);
+  const categoriesSumArr = getCategoriesSumMap(categories, transactions);
+  const categoriesSumJson = addCategoriesToSum(categories, categoriesSumArr);
+  return { categoriesSumJson };
+};
 
 const expenses = async (req, res) => {
   const errors = validationResult(req);
@@ -283,14 +305,44 @@ const expenses = async (req, res) => {
         .status(400)
         .send(errorObject(ERROR_NO_PERMISSION));
     }
-    const categories = getTransactionsCategories(BankAccount.transactions);
-    const categoriesSumArr = getCategoriesSumMap(categories, BankAccount.transactions);
-    const categoriesSumJson = addCategoriesToSum(categories, categoriesSumArr);
-    return res.send({ categoriesSumJson });
+
+    return res.send(getExpenses(BankAccount.transactions));
   } catch (err) {
     return res
       .status(500)
       .send(errorObject(ERROR_SOMETHING_BAD_HAPPEND, 'Something bad happened in expenses :(', err));
+  }
+};
+
+const dashboard = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res
+      .status(400)
+      .send(errorObject(ERROR_VALIDATION_FAILED, 'Validation Failed', errors.mapped()));
+  }
+
+  try {
+    const userId = req.user.user.id;
+
+    const BankAccount = await Bank.findOne({ userId }).exec();
+    if (!BankAccount) {
+      return res
+        .status(400)
+        .send(errorObject(ERROR_NO_PERMISSION));
+    }
+
+    return res.send({
+      status: getStatus(BankAccount.balance),
+      income: getIncome(BankAccount.transactions),
+      netpay: getNetpay(BankAccount.transactions),
+      deductions: getDeductions(BankAccount.transactions),
+      expenses: getExpenses(BankAccount.transactions),
+    });
+  } catch (err) {
+    return res
+      .status(500)
+      .send(errorObject(ERROR_SOMETHING_BAD_HAPPEND, 'Something bad happened in dashboard :(', err));
   }
 };
 
@@ -302,4 +354,5 @@ module.exports = {
   netpay,
   deductions,
   expenses,
+  dashboard,
 };
