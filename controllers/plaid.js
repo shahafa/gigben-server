@@ -11,7 +11,14 @@ const plaidClient = new plaid.Client(
   process.env.PLAID_CLIENT_ID,
   process.env.PLAID_SECRET,
   process.env.PLAID_PUBLIC_KEY,
-  plaid.environments[process.env.PLAID_ENV],
+  plaid.environments.development,
+);
+
+const plaidClientSandbox = new plaid.Client(
+  process.env.PLAID_CLIENT_ID,
+  process.env.PLAID_SECRET,
+  process.env.PLAID_PUBLIC_KEY,
+  plaid.environments.sandbox,
 );
 
 const validatePlaidToken = [
@@ -35,13 +42,15 @@ const login = async (req, res) => {
   const publicToken = data.plaidPublicToken;
 
   try {
-    const { access_token: accessToken } = await plaidClient.exchangePublicToken(publicToken);
+    const client = publicToken.includes('development') ? plaidClient : plaidClientSandbox;
+
+    const { access_token: accessToken } = await client.exchangePublicToken(publicToken);
 
     const values = await Promise.all([
-      plaidClient.getAccounts(accessToken),
-      plaidClient.getTransactions(accessToken, getDate(12), getDate(0)),
-      plaidClient.getIdentity(accessToken),
-      plaidClient.getBalance(accessToken),
+      client.getAccounts(accessToken),
+      client.getTransactions(accessToken, getDate(12), getDate(0)),
+      client.getIdentity(accessToken),
+      client.getBalance(accessToken),
     ]);
 
     const accountValues = {
