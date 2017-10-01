@@ -279,13 +279,16 @@ const deductions = async (req, res) => {
 };
 
 const addCategoriesToSum = (categories, sumAmount) =>
-  categories.map(category => `name: ${category}, value: ${sumAmount[categories.indexOf(category)]}`);
+  categories.map(category => ({
+    name: category,
+    value: sumAmount[categories.indexOf(category)],
+  }));
 
 const getExpenses = (transactions) => {
   const categories = getTransactionsCategories(transactions);
   const categoriesSumArr = getCategoriesSumMap(categories, transactions);
   const categoriesSumJson = addCategoriesToSum(categories, categoriesSumArr);
-  return { categoriesSumJson };
+  return categoriesSumJson;
 };
 
 const expenses = async (req, res) => {
