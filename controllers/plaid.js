@@ -89,9 +89,9 @@ const getStatus = (balanceAccounts) => {
   return {
     bankBalance: sumBalance,
     creditCards: sumCredits,
-    loans: 3184,
+    loans: 0,
     investments: sumSavings,
-    retiementBalance: 10232,
+    retiementBalance: 0,
   };
 };
 
@@ -214,7 +214,7 @@ const getNetpay = (transactions) => {
   const paymentsByMonth = getArraySumTransactions(transactions, arrMonths, isDeduction);
   const incomeByMonth = getArraySumTransactions(transactions, arrMonths, !isDeduction);
   const totalNetPay = incomeByMonth.map((monthlyIncome, index) =>
-    parseInt(monthlyIncome - paymentsByMonth[index], 10),
+    parseInt((-1 * monthlyIncome) - paymentsByMonth[index], 10),
   );
   return { labels: arrMonths, data: totalNetPay };
 };
