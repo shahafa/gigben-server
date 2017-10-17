@@ -161,6 +161,9 @@ const getPlatformsMap = (plaformsNames, arrayMonths, transactions, isDeduction) 
     .map(name => getTransactionsByFieldName(transactions, name))
     .map(platformTrans => getArraySumTransactions(platformTrans, arrayMonths, isDeduction));
 
+const getPlatformData = transactions =>
+  transactions.filter(transaction => transaction.amount < 0).map(transaction => transaction.name);
+
 const getCategoriesSumMap = (plaformsNames, transactions) =>
   plaformsNames.map(name => getSumTransactionByCategory(transactions, name));
 
@@ -169,14 +172,17 @@ const getIncome = (transactions) => {
   const lastYear = moment().subtract(1, 'years');
   const arrMonths = getMonthLabels(lastYear, now);
   const isDeduction = false;
-  const platforms = ['Uber', 'fiverr'];
-  const platformsSumArr = getPlatformsMap(platforms, arrMonths, transactions, isDeduction);
+  const platforms = getPlatformData(transactions);
+  const setPlatforms = platforms.filter((elem, pos) => platforms.indexOf(elem) === pos);
+  const platformsSumArr = getPlatformsMap(setPlatforms, arrMonths, transactions, isDeduction);
+  const platformsJson = setPlatforms.map((name, idx) => ({
+    name,
+    color: '#3863a0',
+    data: platformsSumArr[idx].map(elem => elem * -1),
+  }));
   return {
     labels: arrMonths,
-    platforms: [
-      { name: platforms[0], color: '#6fda44', data: platformsSumArr[0] },
-      { name: platforms[1], color: '#3863a0', data: platformsSumArr[1] },
-    ],
+    platforms: platformsJson,
   };
 };
 
