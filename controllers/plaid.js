@@ -177,7 +177,6 @@ const getIncome = (transactions) => {
   const platformsSumArr = getPlatformsMap(setPlatforms, arrMonths, transactions, isDeduction);
   const platformsJson = setPlatforms.map((name, idx) => ({
     name,
-    color: '#3863a0',
     data: platformsSumArr[idx].map(elem => elem * -1),
   }));
   return {
@@ -261,8 +260,8 @@ const getDeductions = (transactions) => {
   return {
     labels: arrMonths,
     platforms: [
-      { name: platforms[0], color: '#FF7B99', data: platformsSumArr[0] },
-      { name: platforms[1], color: '#4EAFEE', data: platformsSumArr[1] },
+      { name: platforms[0], data: platformsSumArr[0] },
+      { name: platforms[1], data: platformsSumArr[1] },
     ],
   };
 };
