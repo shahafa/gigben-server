@@ -19,6 +19,7 @@ function routesConfig(app) {
   app.post('/v1/dashboard/netpay', authenticate, plaidController.validatePlaidToken, plaidController.netpay);
   app.post('/v1/dashboard/deductions', authenticate, plaidController.validatePlaidToken, plaidController.deductions);
   app.post('/v1/dashboard/expenses', authenticate, plaidController.validatePlaidToken, plaidController.expenses);
+  app.post('/v1/dashboard/monthlyExpenses', authenticate, plaidController.validatePlaidToken, plaidController.monthlyExpenses);
 
   app.post('/v1/addEarlyAccessUser', earlyAccessUserController.validateAddUser, earlyAccessUserController.addUser);
 

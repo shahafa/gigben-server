@@ -305,6 +305,23 @@ const getExpenses = (transactions) => {
   return categoriesSumJson;
 };
 
+const monthlyExpenses = (transactions) => {
+  const now = moment();
+  const lastYear = moment().subtract(1, 'years');
+  const arrMonths = getMonthLabels(lastYear, now);
+  const categories = getTransactionsCategories(transactions);
+  const isDeduction = false;
+  const categoriesSumArr = getPlatformsMap(categories, arrMonths, transactions, isDeduction);
+  const categoriesSumJson = categories.map((name, idx) => ({
+    name,
+    data: categoriesSumArr[idx],
+  }));
+  return {
+    labels: arrMonths,
+    platforms: categoriesSumJson,
+  };
+};
+
 const expenses = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -371,5 +388,6 @@ module.exports = {
   netpay,
   deductions,
   expenses,
+  monthlyExpenses,
   dashboard,
 };
